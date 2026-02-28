@@ -2,7 +2,7 @@ const citizenModel = require('../models/citizen.model');
 const authorityModel = require('../models/authority.model');
 const adminModel = require('../models/admin.model');
 
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 async function registerCitizen(req, res) {
