@@ -16,6 +16,10 @@ app.use(cors({
 		if (allowedOrigins.includes(origin)) {
 			return callback(null, true);
 		}
+		// Allow Vercel preview/branch deployment URLs
+		if (/\.vercel\.app$/.test(origin)) {
+			return callback(null, true);
+		}
 		callback(new Error('Not allowed by CORS'));
 	},
 	credentials: true,

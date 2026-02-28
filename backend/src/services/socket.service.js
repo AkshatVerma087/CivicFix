@@ -9,7 +9,12 @@ function initSocket(server) {
 
     ioInstance = new Server(server, {
         cors: {
-            origin: allowedOrigins,
+            origin: function (origin, callback) {
+                if (!origin) return callback(null, true);
+                if (allowedOrigins.includes(origin)) return callback(null, true);
+                if (/\.vercel\.app$/.test(origin)) return callback(null, true);
+                callback(new Error('Not allowed by CORS'));
+            },
             methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
             credentials: true,
         },
