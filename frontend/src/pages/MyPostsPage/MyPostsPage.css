@@ -1,0 +1,56 @@
+.my-posts-page {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.my-posts-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.my-posts-page__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.my-posts-page__subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.my-posts-page__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+}
+
+.my-posts-page__empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-muted);
+}
+
+.my-posts-page__empty h3 {
+  margin-top: 1rem;
+  color: var(--text-secondary);
+}
+
+.my-posts-page__empty p {
+  margin: 0.5rem 0 1.5rem;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 600px) {
+  .my-posts-page__grid {
+    grid-template-columns: 1fr;
+  }
+}
