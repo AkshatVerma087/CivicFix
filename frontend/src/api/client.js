@@ -44,12 +44,19 @@ async function request(endpoint, options = {}) {
   const data = isJson ? await response.json() : await response.text();
 
   if (!response.ok) {
-    const message =
-      typeof data === 'object' && data && 'message' in data
-        ? data.message
-        : typeof data === 'string'
-          ? data.slice(0, 300)
-          : 'Something went wrong';
+    let message;
+    if (typeof data === 'object' && data && 'message' in data) {
+      message = data.message;
+    } else if (typeof data === 'string') {
+      const trimmed = data.trimStart();
+      if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html') || trimmed.startsWith('<')) {
+        message = 'Unexpected HTML response from server. Check VITE_API_URL is set to your backend (Render) URL.';
+      } else {
+        message = data.slice(0, 300);
+      }
+    } else {
+      message = 'Something went wrong';
+    }
     const error = new Error(message || 'Something went wrong');
     error.status = response.status;
     error.data = data;
