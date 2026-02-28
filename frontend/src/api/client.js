@@ -1,4 +1,11 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+function normalizeApiBaseUrl(value) {
+  const raw = String(value || '').trim();
+  const fallback = 'http://localhost:3000/api';
+  const base = raw ? raw.replace(/\/+$/, '') : fallback;
+  return base.endsWith('/api') ? base : `${base}/api`;
+}
+
+const BASE_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_URL);
 
 function getToken() {
   return localStorage.getItem('token');
@@ -32,10 +39,18 @@ async function request(endpoint, options = {}) {
     throw new Error('Session expired. Please login again.');
   }
 
-  const data = await response.json();
+  const contentType = response.headers.get('content-type') || '';
+  const isJson = contentType.includes('application/json');
+  const data = isJson ? await response.json() : await response.text();
 
   if (!response.ok) {
-    const error = new Error(data.message || 'Something went wrong');
+    const message =
+      typeof data === 'object' && data && 'message' in data
+        ? data.message
+        : typeof data === 'string'
+          ? data.slice(0, 300)
+          : 'Something went wrong';
+    const error = new Error(message || 'Something went wrong');
     error.status = response.status;
     error.data = data;
     throw error;
