@@ -5,6 +5,14 @@ const adminModel = require('../models/admin.model');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+const isProd = process.env.NODE_ENV === 'production';
+const COOKIE_OPTIONS = {
+    httpOnly: true,
+    sameSite: isProd ? 'none' : 'lax',
+    secure: isProd,
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+};
+
 async function registerCitizen(req, res) {
     try {
         const { name, email, address, password } = req.body;
@@ -40,13 +48,7 @@ async function registerCitizen(req, res) {
         });
 
         const token = jwt.sign({ id: newCitizen._id, role: 'citizen' }, process.env.JWT_SECRET);
-
-        res.cookie('token', token, {
-            httpOnly: true,
-            sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-        });
-
+        res.cookie('token', token, COOKIE_OPTIONS);
         res.status(201).json({ message: 'Citizen registered successfully', token });
     } catch (error) {
         console.error('Register Citizen Error:', error);
@@ -74,12 +76,7 @@ async function loginCitizen(req, res) {
         }
 
         const token = jwt.sign({ id: citizen._id, role: 'citizen' }, process.env.JWT_SECRET);
-        res.cookie('token', token, {
-            httpOnly: true,
-            sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        });
-
+        res.cookie('token', token, COOKIE_OPTIONS);
         res.status(200).json({ message: 'Citizen logged in successfully', token });
     } catch (error) {
         console.error('Login Citizen Error:', error);
@@ -89,7 +86,7 @@ async function loginCitizen(req, res) {
 
 async function logoutCitizen(req, res) {
     try {
-        res.clearCookie('token');
+        res.clearCookie('token', { httpOnly: true, sameSite: isProd ? 'none' : 'lax', secure: isProd });
         res.status(200).json({ message: 'Citizen logged out successfully' });
     } catch (error) {
         console.error('Logout Citizen Error:', error);
@@ -152,11 +149,7 @@ async function registerAuthority(req, res) {
             role: 'authority'
         }, process.env.JWT_SECRET);
 
-        res.cookie('token', token, {
-            httpOnly: true,
-            sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        });
+        res.cookie('token', token, COOKIE_OPTIONS);
 
         res.status(201).json({
             message: "Authority registered successfully",
@@ -198,11 +191,7 @@ async function loginAuthority(req, res) {
         }
 
         const token = jwt.sign({ id: authority._id, role: 'authority' }, process.env.JWT_SECRET);
-        res.cookie('token', token, {
-            httpOnly: true,
-            sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        });
+        res.cookie('token', token, COOKIE_OPTIONS);
 
         res.status(200).json({
             message: 'Authority logged in successfully',
@@ -224,7 +213,7 @@ async function loginAuthority(req, res) {
 
 async function logoutAuthority(req, res) {
     try {
-        res.clearCookie('token');
+        res.clearCookie('token', { httpOnly: true, sameSite: isProd ? 'none' : 'lax', secure: isProd });
         res.status(200).json({ message: 'Authority logged out successfully' });
     } catch (error) {
         console.error('Logout Authority Error:', error);
@@ -271,11 +260,7 @@ async function registerAdmin(req, res) {
             role: 'admin'
         }, process.env.JWT_SECRET);
 
-        res.cookie('token', token, {
-            httpOnly: true,
-            sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        });
+        res.cookie('token', token, COOKIE_OPTIONS);
 
         res.status(201).json({
             message: "Admin registered successfully",
@@ -312,12 +297,7 @@ async function loginAdmin(req, res) {
         }
 
         const token = jwt.sign({ id: admin._id, role: 'admin' }, process.env.JWT_SECRET);
-        res.cookie('token', token, {
-            httpOnly: true,
-            sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        });
-
+        res.cookie('token', token, COOKIE_OPTIONS);
         res.status(200).json({ message: 'Admin logged in successfully', token });
     } catch (error) {
         console.error('Login Admin Error:', error);
@@ -328,7 +308,7 @@ async function loginAdmin(req, res) {
 
 async function logoutAdmin(req, res) {
     try {
-        res.clearCookie('token');
+        res.clearCookie('token', { httpOnly: true, sameSite: isProd ? 'none' : 'lax', secure: isProd });
         res.status(200).json({ message: 'Admin logged out successfully' });
     } catch (error) {
         console.error('Logout Admin Error:', error);
