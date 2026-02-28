@@ -80,7 +80,7 @@ export default function LoginPage() {
         <div className="login-header">
           <div className="login-header__logo">
             <div className="login-header__logo-icon">CS</div>
-            <h1 className="login-header__title">CivicSense</h1>
+            <h1 className="login-header__title">CivicFix</h1>
           </div>
           <p className="login-header__subtitle">
             Empowering citizens to build better communities

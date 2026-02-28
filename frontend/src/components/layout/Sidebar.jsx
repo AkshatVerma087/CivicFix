@@ -71,7 +71,7 @@ export default function Sidebar({ isOpen, onToggle }) {
         <div className="sidebar__header">
           <div className="sidebar__logo">
             <div className="sidebar__logo-icon">CS</div>
-            <span className="sidebar__logo-text">CivicSense</span>
+            <span className="sidebar__logo-text">CivicFix</span>
           </div>
           <button className="sidebar__close-btn" onClick={onToggle}>
             <ChevronLeft size={18} />

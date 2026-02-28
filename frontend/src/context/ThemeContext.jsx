@@ -4,12 +4,12 @@ const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('civicsense-theme') || 'dark';
+    return localStorage.getItem('civicfix-theme') || 'dark';
   });
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('civicsense-theme', theme);
+    localStorage.setItem('civicfix-theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {
