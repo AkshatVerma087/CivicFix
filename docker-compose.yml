@@ -1,0 +1,33 @@
+name: civic-fix-v1
+
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: ./backend/.env
+    environment:
+      PORT: 8000
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "8000:8000"
+    volumes:
+      - backend_uploads:/app/uploads
+  
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8000/api
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      api:
+        condition: service_started
+
+volumes:
+  backend_uploads:
+  

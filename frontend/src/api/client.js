@@ -1,6 +1,6 @@
 function normalizeApiBaseUrl(value) {
   const raw = String(value || '').trim();
-  const fallback = 'http://localhost:3000/api';
+  const fallback = 'http://localhost:8000/api';
   const base = raw ? raw.replace(/\/+$/, '') : fallback;
   return base.endsWith('/api') ? base : `${base}/api`;
 }
