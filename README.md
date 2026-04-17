@@ -242,6 +242,69 @@ npm run dev        # Starts on http://localhost:5173
 
 ---
 
+## Dockerized Local Stack (New)
+
+This project now supports full local execution with Docker Compose.
+
+### What was added
+
+- Root `docker-compose.yml` with `api` and `frontend` services
+- `backend/Dockerfile` for Express API image
+- `frontend/Dockerfile` (multi-stage build: Node build + Nginx serve)
+- `backend/.dockerignore` and `frontend/.dockerignore` to optimize build context
+- Persistent Docker volume for backend uploads (`backend_uploads`)
+
+### Ports
+
+- Frontend: `http://localhost:3000`
+- Backend API: `http://localhost:8000`
+- Backend health check: `http://localhost:8000/api/health`
+
+### Run locally with Docker
+
+```bash
+docker compose up -d --build
+docker compose ps
+```
+
+### Stop
+
+```bash
+docker compose down
+```
+
+---
+
+## Jenkins CI/CD Pipeline (New Feature)
+
+Jenkins CI/CD was added to automate test/build/deploy for this project.
+
+### Files added
+
+- `Jenkinsfile` — pipeline definition
+- `JENKINS_SETUP.md` — setup guide for Jenkins job and credentials
+- `jenkins.Dockerfile` — custom Jenkins image with Docker CLI + Docker Compose plugin
+
+### Pipeline stages
+
+1. Checkout
+2. Prepare backend env file from Jenkins secret (`backend-env-raw`)
+3. Backend tests (`node --test`)
+4. Frontend Docker build
+5. Deploy (main branch only)
+6. Health Check (main branch only)
+
+### Branch behavior
+
+- Non-main branches run CI stages (build/test) without deployment
+- `main` branch runs full CD stages (deploy + health check)
+
+### Jenkins runtime requirement
+
+Jenkins must have Docker access to run pipeline commands like `docker compose build` and `docker compose up`.
+
+---
+
 ## Deployment
 
 | Service        | What                  | Free Tier          |
