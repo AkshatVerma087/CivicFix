@@ -4,6 +4,7 @@ pipeline {
   options {
     timestamps()
     disableConcurrentBuilds()
+    skipDefaultCheckout(true)
   }
 
   environment {
@@ -13,6 +14,7 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
+        deleteDir()
         checkout scm
       }
     }
@@ -83,15 +85,6 @@ pipeline {
   }
 
   post {
-    always {
-      script {
-        if (isUnix()) {
-          sh 'docker compose ps || true'
-        } else {
-          bat 'docker compose ps'
-        }
-      }
-    }
     success {
       echo 'Pipeline completed successfully.'
     }
