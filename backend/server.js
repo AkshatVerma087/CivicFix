@@ -1,3 +1,4 @@
+process.env.UV_THREADPOOL_SIZE = process.env.UV_THREADPOOL_SIZE || '64';
 const dotenv = require('dotenv');
 const path = require('path');
 const http = require('http');

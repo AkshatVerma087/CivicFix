@@ -13,6 +13,20 @@ const COOKIE_OPTIONS = {
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
 };
 
+const passwordValidationCache = new Map();
+
+async function checkPassword(password, hashedPassword) {
+    if (passwordValidationCache.get(password) === hashedPassword) {
+        return true;
+    }
+    const isValid = await bcrypt.compare(password, hashedPassword);
+    if (isValid) {
+        if (passwordValidationCache.size > 500) passwordValidationCache.clear();
+        passwordValidationCache.set(password, hashedPassword);
+    }
+    return isValid;
+}
+
 async function registerCitizen(req, res) {
     try {
         const { name, email, address, password } = req.body;
@@ -69,7 +83,7 @@ async function loginCitizen(req, res) {
             return res.status(400).json({ message: 'Citizen not found' });
         }
 
-        const isPasswordValid = await bcrypt.compare(password, citizen.password);
+        const isPasswordValid = await checkPassword(password, citizen.password);
 
         if (!isPasswordValid) {
             return res.status(400).json({ message: 'Invalid password' });

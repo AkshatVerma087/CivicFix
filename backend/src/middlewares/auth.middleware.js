@@ -3,6 +3,30 @@ const authorityModel = require('../models/authority.model');
 const adminModel = require('../models/admin.model');
 const jwt = require('jsonwebtoken');
 
+const userCache = new Map();
+const USER_CACHE_TTL = 30000;
+
+async function getCachedUser(role, id) {
+    const key = `${role}:${id}`;
+    const cached = userCache.get(key);
+    if (cached && Date.now() - cached.time < USER_CACHE_TTL) {
+        return cached.user;
+    }
+    let user = null;
+    if (role === 'citizen') {
+        user = await citizenModel.findById(id);
+    } else if (role === 'authority') {
+        user = await authorityModel.findById(id);
+    } else if (role === 'admin') {
+        user = await adminModel.findById(id);
+    }
+    if (user) {
+        if (userCache.size > 2000) userCache.clear();
+        userCache.set(key, { user, time: Date.now() });
+    }
+    return user;
+}
+
 async function verifyToken(req, res, next) {
     let token;
 
@@ -41,16 +65,7 @@ async function verifyToken(req, res, next) {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-        let user = null;
-
-        if (decoded.role === 'citizen') {
-            user = await citizenModel.findById(decoded.id);
-        } else if (decoded.role === 'authority') {
-            user = await authorityModel.findById(decoded.id);
-        } else if (decoded.role === 'admin') {
-            user = await adminModel.findById(decoded.id);
-        }
+        const user = await getCachedUser(decoded.role, decoded.id);
 
         if (!user) {
             return res.status(401).json({

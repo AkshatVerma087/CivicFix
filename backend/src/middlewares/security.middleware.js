@@ -2,9 +2,12 @@ const requestTracker = new Map();
 
 function basicRateLimiter(options = {}) {
     const windowMs = options.windowMs || 60 * 1000;
-    const maxRequests = options.maxRequests || 120;
+    const maxRequests = Number(process.env.RATE_LIMIT_MAX) || options.maxRequests || 120;
 
     return (req, res, next) => {
+        if (process.env.DISABLE_RATE_LIMIT === 'true') {
+            return next();
+        }
         const now = Date.now();
         const key = req.ip || req.connection.remoteAddress || 'unknown';
 

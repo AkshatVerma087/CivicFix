@@ -26,6 +26,11 @@ function initSocket(server) {
                 socket.join(`user:${userId}`);
             }
         });
+
+        // Issue status update broadcast event
+        socket.on('issue:status-change', (data) => {
+            ioInstance.emit('issue:status-updated', data);
+        });
     });
 
     return ioInstance;
@@ -40,8 +45,14 @@ function emitToUser(userId, eventName, payload) {
     ioInstance.to(`user:${userId}`).emit(eventName, payload);
 }
 
+function broadcastIssueUpdate(payload) {
+    if (!ioInstance) return;
+    ioInstance.emit('issue:status-updated', payload);
+}
+
 module.exports = {
     initSocket,
     getIO,
     emitToUser,
+    broadcastIssueUpdate,
 };

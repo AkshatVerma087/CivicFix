@@ -55,14 +55,13 @@ async function getAllPosts(req, res) {
         const radius = parseFloat(req.query.radius) || 10;
 
         if (!isNaN(lat) && !isNaN(lng)) {
-            // Convert radius from km to approximate degree delta
-            // 1 degree latitude ≈ 111 km
-            const latDelta = radius / 111;
-            // 1 degree longitude ≈ 111 * cos(lat) km
-            const lngDelta = radius / (111 * Math.cos((lat * Math.PI) / 180));
-
-            query['location.latitude'] = { $gte: lat - latDelta, $lte: lat + latDelta };
-            query['location.longitude'] = { $gte: lng - lngDelta, $lte: lng + lngDelta };
+            // Earth radius in km ≈ 6378.1
+            const radiusInRadians = radius / 6378.1;
+            query.location = {
+                $geoWithin: {
+                    $centerSphere: [[lng, lat], radiusInRadians],
+                },
+            };
         }
 
         const [posts, totalPosts] = await Promise.all([
@@ -203,14 +202,36 @@ async function createPost(req, res) {
             return res.status(400).json({ message: 'Longitude must be between -180 and 180' });
         }
 
-        const hasPhotos = photoFiles.length > 0;
-        const hasVideos = videoFiles.length > 0;
+        let uploadedPhotos = [];
+        let uploadedVideos = [];
+
+        if (Array.isArray(req.body.photos)) {
+            uploadedPhotos = req.body.photos.map((p) =>
+                typeof p === 'string' ? { url: p, publicId: 'url_' + Date.now() } : p
+            );
+        } else if (typeof req.body.photos === 'string' && req.body.photos.trim().length > 0) {
+            try {
+                const parsed = JSON.parse(req.body.photos);
+                if (Array.isArray(parsed)) {
+                    uploadedPhotos = parsed.map((p) =>
+                        typeof p === 'string' ? { url: p, publicId: 'url_' + Date.now() } : p
+                    );
+                }
+            } catch (e) {
+                if (req.body.photos.startsWith('http')) {
+                    uploadedPhotos = [{ url: req.body.photos, publicId: 'url_' + Date.now() }];
+                }
+            }
+        }
+
+        const hasPhotos = photoFiles.length > 0 || uploadedPhotos.length > 0;
+        const hasVideos = videoFiles.length > 0 || uploadedVideos.length > 0;
 
         if (!hasPhotos && !hasVideos) {
             return res.status(400).json({ message: 'Please upload photos or one video' });
         }
 
-        if (hasPhotos && hasVideos) {
+        if (photoFiles.length > 0 && videoFiles.length > 0) {
             return res.status(400).json({ message: 'Upload either photos or videos, not both' });
         }
 
@@ -218,10 +239,7 @@ async function createPost(req, res) {
             return res.status(400).json({ message: 'Only one video is allowed' });
         }
 
-        const uploadedPhotos = [];
-        const uploadedVideos = [];
-
-        if (hasPhotos) {
+        if (photoFiles.length > 0) {
             for (const file of photoFiles) {
                 const uploaded = await uploadFile(file.path, 'civic-sense/posts/photos', 'image');
                 uploadedPhotos.push({
@@ -236,7 +254,7 @@ async function createPost(req, res) {
             }
         }
 
-        if (hasVideos) {
+        if (videoFiles.length > 0) {
             for (const file of videoFiles) {
                 const uploaded = await uploadFile(file.path, 'civic-sense/posts/videos', 'video');
                 uploadedVideos.push({
@@ -251,6 +269,9 @@ async function createPost(req, res) {
             }
         }
 
+        const latNum = location.latitude !== undefined ? Number(location.latitude) : 0;
+        const lngNum = location.longitude !== undefined ? Number(location.longitude) : 0;
+
         const post = await postsModel.create({
             citizen: req.userId,
             title,
@@ -258,8 +279,10 @@ async function createPost(req, res) {
             category,
             location: {
                 ...location,
-                ...(location.latitude !== undefined ? { latitude: Number(location.latitude) } : {}),
-                ...(location.longitude !== undefined ? { longitude: Number(location.longitude) } : {}),
+                type: 'Point',
+                coordinates: [lngNum, latNum],
+                latitude: latNum,
+                longitude: lngNum,
             },
             photos: uploadedPhotos,
             videos: uploadedVideos,
