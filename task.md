@@ -38,8 +38,8 @@ Node model → Go model mapping:
 
 - [ ] Commit the current `backend-v2` working tree and the frontend Clerk work on the `backend-v2` branch.
 - [ ] Run `task check` (Postgres on 5433, Redis, Clerk) and `go test ./...` and confirm both pass.
-- [ ] Add a CI workflow for `backend-v2`: `go build`, `go vet`, `golangci-lint`, `go test` (with testcontainers).
-- [ ] Write down the Node → Go endpoint map (below) in `backend-v2/apps/backend/README.md` so the frontend switch is mechanical.
+- [x] Add a CI workflow for `backend-v2`: `go build`, `go vet`, `golangci-lint`, `go test` (with testcontainers).
+- [x] Write down the Node → Go endpoint map (below) in `backend-v2/apps/backend/README.md` so the frontend switch is mechanical.
 
 ## Phase 1: All models and DTOs
 

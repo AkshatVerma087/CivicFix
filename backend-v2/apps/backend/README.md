@@ -104,6 +104,54 @@ task run
 
 Configuration is managed through environment variables with the `CIVICFIX_` prefix:
 
+## Migrating from the Node backend
+
+This service replaces `backend/` (Express + MongoDB). Use this map to switch the frontend's API calls one at a time.
+
+**Base URL:** Node served `/api/...`; Go serves `/api/v1/...`.
+
+**Auth:** Node issued its own JWT from `/api/auth/*/login`. Go accepts a **Clerk session token** (`Authorization: Bearer <token>`); the user's role comes from the token's `role` claim. Sign-up, sign-in, sign-out and password changes happen in Clerk, so those Node endpoints have no Go equivalent.
+
+**Response shape changes:**
+- Ids: Mongo `_id` (ObjectId) → `id` (UUID for posts, comments and notifications; Clerk id `user_...` for users).
+- Lists: `{ posts, total, page, ... }` → `PaginatedResponse`: `{ data, page, limit, total, totalPages }`.
+- Status `in-progress` is still accepted as input but is always returned as `inProgress`.
+
+| Node (`/api/...`) | Method | Go (`/api/v1/...`) | Status |
+|---|---|---|---|
+| `auth/citizen/register`, `auth/authority/register`, `auth/admin/register` | POST | Clerk sign-up, then `POST /me/onboarding` | ✅ done |
+| `auth/*/login`, `auth/*/logout` | POST | Clerk (no API call) | ✅ done |
+| `auth/authority/location` | PATCH | `PATCH /me/location` | ✅ done |
+| (first admin / promote) | — | `POST /admin/users/:id/promote` | ✅ done |
+| `auth/profile` | GET | `GET /me` | ✅ done |
+| `auth/profile` | PATCH | `PATCH /me` | ⏳ |
+| `auth/change-password` | POST | Clerk `<UserProfile/>` | ⏳ |
+| `auth/admin/authorities` | GET | `GET /admin/authorities` | ⏳ |
+| — | PATCH | `PATCH /admin/authorities/:id/verify` | ⏳ new |
+| `posts` | GET | `GET /posts` | ⏳ |
+| `posts/my-posts` | GET | `GET /posts/mine` | ⏳ |
+| `posts/summary` | GET | `GET /posts/summary` | ⏳ |
+| `posts/:id` | GET | `GET /posts/:id` | ⏳ |
+| — | GET | `GET /posts/nearby?lat=&lng=&radius=` | ⏳ new |
+| `posts/create` | POST | `POST /posts` | ⏳ |
+| `posts/:id` | PATCH, PUT | `PATCH /posts/:id/status` | ⏳ |
+| `posts/:id` | DELETE | `DELETE /posts/:id` | ⏳ |
+| `posts/:id/assign` | PATCH | `PATCH /posts/:id/assign` | ⏳ |
+| `posts/:id/upvote` | POST, DELETE | `POST`, `DELETE /posts/:id/upvote` | ⏳ |
+| `posts/:id/confirm-resolution` | POST | `POST /posts/:id/confirm-resolution` | ⏳ |
+| `posts/:id/reject-resolution` | POST | `POST /posts/:id/reject-resolution` | ⏳ |
+| `posts/:id/comments` | GET, POST | `GET`, `POST /posts/:id/comments` | ⏳ |
+| `posts/:id/comments/:commentId` | DELETE | `DELETE /posts/:id/comments/:commentId` | ⏳ |
+| `notifications/my` | GET | `GET /notifications` | ⏳ |
+| `notifications/:id/read` | PATCH | `PATCH /notifications/:id/read` | ⏳ |
+| — | PATCH, GET | `PATCH /notifications/read-all`, `GET /notifications/unread-count` | ⏳ new |
+| `posts/analytics` | GET | `GET /analytics` | ⏳ |
+| `posts/leaderboard` | GET | `GET /leaderboard` | ⏳ |
+| `health` | GET | `GET /status` (at the root, not under `/api/v1`) | ✅ done |
+| socket.io `notification:new`, `issue:status-updated` | WS | WebSocket or SSE (to be decided) | ⏳ |
+
+Update the Status column as each route lands.
+
 ## Development
 
 ### Available Tasks

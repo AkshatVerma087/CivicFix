@@ -1,0 +1,72 @@
+name: backend-v2
+
+on:
+  push:
+    branches: [main, backend-v2]
+    paths:
+      - "backend-v2/apps/backend/**"
+      - ".github/workflows/backend-v2.yml"
+  pull_request:
+    paths:
+      - "backend-v2/apps/backend/**"
+      - ".github/workflows/backend-v2.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-v2-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: backend-v2/apps/backend
+
+jobs:
+  build-test:
+    name: build, vet, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend-v2/apps/backend/go.mod
+          cache-dependency-path: backend-v2/apps/backend/go.sum
+
+      - name: Verify modules
+        run: go mod verify
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      # Tests use testcontainers (internal/testing/container.go) to start Postgres;
+      # ubuntu-latest runners have Docker available.
+      - name: Test
+        run: go test -race -count=1 ./...
+
+  lint:
+    name: golangci-lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # needed for only-new-issues
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend-v2/apps/backend/go.mod
+          cache-dependency-path: backend-v2/apps/backend/go.sum
+
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.15.0
+          working-directory: backend-v2/apps/backend
+          # The strict .golangci.yml from the boilerplate reports ~190 issues in existing code.
+          # Only fail on issues introduced by the change; remove once the backlog is fixed.
+          only-new-issues: true
