@@ -6,7 +6,7 @@ A full-stack civic issue reporting and management platform where **citizens** re
 
 ## Features
 
-### Citizens
+### Citizen
 
 - **Report Issues** — Submit problems with title, description, category, severity, geolocation, photos, and videos
 - **Dashboard** — Browse all community issues with search, filters (category, severity, status), and pagination
