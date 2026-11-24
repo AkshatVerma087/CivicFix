@@ -1,8 +1,9 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { useContext, useState, useCallback } from 'react';
 import { authAPI } from '../api/auth';
 import { decodeToken } from '../api/client';
-
-const AuthContext = createContext(null);
+import { IS_CLERK } from '../config/auth';
+import { AuthContext } from './authContextObject';
+import { ClerkAuthProvider } from './ClerkAuthContext';
 
 function loadUser() {
   try {
@@ -29,7 +30,15 @@ function loadUser() {
   return null;
 }
 
+// Picks the provider for VITE_AUTH_PROVIDER (legacy by default).
 export function AuthProvider({ children }) {
+  return IS_CLERK
+    ? <ClerkAuthProvider>{children}</ClerkAuthProvider>
+    : <LegacyAuthProvider>{children}</LegacyAuthProvider>;
+}
+
+// Email/password login against the Node backend.
+function LegacyAuthProvider({ children }) {
   const [user, setUser] = useState(loadUser);
 
   const login = useCallback(async ({ role, isLogin, formData }) => {
@@ -129,7 +138,17 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, updateUserLocation, isAuthenticated: !!user }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        updateUserLocation,
+        isAuthenticated: !!user,
+        isLoading: false,
+        needsOnboarding: false,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -1,18 +1,33 @@
+import { IS_CLERK } from '../config/auth';
+
 function normalizeApiBaseUrl(value) {
   const raw = String(value || '').trim();
-  const fallback = 'http://localhost:3000/api';
+  const fallback = IS_CLERK ? 'http://localhost:8080/api/v1' : 'http://localhost:3000/api';
   const base = raw ? raw.replace(/\/+$/, '') : fallback;
-  return base.endsWith('/api') ? base : `${base}/api`;
+  // Keep an explicit API path (e.g. /api or /api/v1); otherwise add /api (Node default).
+  return /\/api(\/v\d+)?$/.test(base) ? base : `${base}/api`;
 }
 
 const BASE_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_URL);
 
-function getToken() {
-  return localStorage.getItem('token');
+// Legacy mode reads the JWT from localStorage. Clerk mode registers Clerk's getToken.
+let tokenGetter = async () => localStorage.getItem('token');
+let unauthorizedHandler = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  window.location.href = '/login';
+};
+
+export function setAuthTokenGetter(fn) {
+  tokenGetter = fn;
+}
+
+export function setUnauthorizedHandler(fn) {
+  unauthorizedHandler = fn;
 }
 
 async function request(endpoint, options = {}) {
-  const token = getToken();
+  const token = await tokenGetter();
 
   const headers = { ...options.headers };
 
@@ -33,9 +48,7 @@ async function request(endpoint, options = {}) {
 
   // Handle 401 - token expired/invalid
   if (response.status === 401) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/login';
+    unauthorizedHandler();
     throw new Error('Session expired. Please login again.');
   }
 

@@ -1,4 +1,6 @@
 import { api } from './client';
+import { IS_CLERK } from '../config/auth';
+import { usersAPI } from './users';
 
 export const authAPI = {
   // Citizen
@@ -17,7 +19,10 @@ export const authAPI = {
   getAllAuthorities: () => api.get('/auth/admin/authorities'),
 
   // Update authority location
-  updateLocation: (latitude, longitude) => api.patch('/auth/authority/location', { latitude, longitude }),
+  updateLocation: (latitude, longitude) =>
+    IS_CLERK
+      ? usersAPI.updateLocation(latitude, longitude)
+      : api.patch('/auth/authority/location', { latitude, longitude }),
 
   // Profile
   getProfile: () => api.get('/auth/profile'),
