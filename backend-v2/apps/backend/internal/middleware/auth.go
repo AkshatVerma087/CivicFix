@@ -1,26 +1,16 @@
 package middleware
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"time"
 
-	"github.com/AkshatVerma087/go-civicfix/internal/errs"
-	"github.com/AkshatVerma087/go-civicfix/internal/model"
-	"github.com/AkshatVerma087/go-civicfix/internal/server"
 	"github.com/clerk/clerk-sdk-go/v2"
 	clerkhttp "github.com/clerk/clerk-sdk-go/v2/http"
 	"github.com/labstack/echo/v4"
+	"github.com/AkshatVerma087/go-civicfix/internal/errs"
+	"github.com/AkshatVerma087/go-civicfix/internal/server"
 )
-
-// SessionCustomClaims are the custom claims added to Clerk session tokens.
-// Configure in Clerk Dashboard > Sessions > Customize session token:
-//
-//	{ "role": "{{user.public_metadata.role}}" }
-type SessionCustomClaims struct {
-	Role string `json:"role"`
-}
 
 type AuthMiddleware struct {
 	server *server.Server
@@ -35,9 +25,6 @@ func NewAuthMiddleware(s *server.Server) *AuthMiddleware {
 func (auth *AuthMiddleware) RequireAuth(next echo.HandlerFunc) echo.HandlerFunc {
 	return echo.WrapMiddleware(
 		clerkhttp.WithHeaderAuthorization(
-			clerkhttp.CustomClaimsConstructor(func(_ context.Context) any {
-				return &SessionCustomClaims{}
-			}),
 			clerkhttp.AuthorizationFailureHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				start := time.Now()
 
@@ -71,46 +58,17 @@ func (auth *AuthMiddleware) RequireAuth(next echo.HandlerFunc) echo.HandlerFunc 
 			return errs.NewUnauthorizedError("Unauthorized", false)
 		}
 
-		role := ""
-		if custom, ok := claims.Custom.(*SessionCustomClaims); ok {
-			role = custom.Role
-		}
-
-		c.Set(UserIDKey, claims.Subject)
-		c.Set(UserRoleKey, role)
+		c.Set("user_id", claims.Subject)
+		c.Set("user_role", claims.ActiveOrganizationRole)
 		c.Set("permissions", claims.Claims.ActiveOrganizationPermissions)
 
 		auth.server.Logger.Info().
 			Str("function", "RequireAuth").
 			Str("user_id", claims.Subject).
-			Str("user_role", role).
 			Str("request_id", GetRequestID(c)).
 			Dur("duration", time.Since(start)).
 			Msg("user authenticated successfully")
 
 		return next(c)
 	})
-}
-
-// RequireRole allows the request only if the session's role claim is one of roles.
-// Use after RequireAuth.
-func (auth *AuthMiddleware) RequireRole(roles ...model.Role) echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			role := model.Role(GetUserRole(c))
-			for _, r := range roles {
-				if role == r {
-					return next(c)
-				}
-			}
-			return errs.NewForbiddenError("You don't have access to this resource", true)
-		}
-	}
-}
-
-func GetUserRole(c echo.Context) string {
-	if role, ok := c.Get(UserRoleKey).(string); ok {
-		return role
-	}
-	return ""
 }

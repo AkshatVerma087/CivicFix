@@ -8,7 +8,6 @@ import (
 
 type Services struct {
 	Auth *AuthService
-	User *UserService
 	Job  *job.JobService
 }
 
@@ -18,6 +17,5 @@ func NewServices(s *server.Server, repos *repository.Repositories) (*Services, e
 	return &Services{
 		Job:  s.Job,
 		Auth: authService,
-		User: NewUserService(s, repos.User),
 	}, nil
 }

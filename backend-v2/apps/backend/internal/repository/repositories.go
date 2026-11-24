@@ -2,12 +2,8 @@ package repository
 
 import "github.com/AkshatVerma087/go-civicfix/internal/server"
 
-type Repositories struct {
-	User *UserRepository
-}
+type Repositories struct{}
 
 func NewRepositories(s *server.Server) *Repositories {
-	return &Repositories{
-		User: NewUserRepository(s),
-	}
+	return &Repositories{}
 }
