@@ -17,7 +17,7 @@ FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
 
 
 
----------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------
 
 CREATE TABLE citizen_profiles (
     user_id     TEXT PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
@@ -33,7 +33,7 @@ FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
 
 
 
------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------
 
 CREATE TABLE authority_profiles (
     user_id     TEXT PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
