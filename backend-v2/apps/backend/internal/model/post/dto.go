@@ -43,6 +43,8 @@ func (p *DeletePostPayload) Validate() error { return validate.Struct(p) }
 // =============================================================
 
 // ConfirmResolutionPayload is sent when the reporter accepts the fix.
+// The post must be pendingResolution; it becomes resolved and is kept.
+// (Node deleted it here, which left analytics nothing to count as resolved.)
 type ConfirmResolutionPayload struct {
 	ID uuid.UUID `param:"id" validate:"required"`
 }
@@ -61,6 +63,30 @@ type RejectResolutionPayload struct {
 
 // Validate checks the post id.
 func (p *RejectResolutionPayload) Validate() error { return validate.Struct(p) }
+
+// =============================================================
+// UpvotePostPayload  ->  POST /posts/:id/upvote
+// =============================================================
+
+// UpvotePostPayload upvotes a post as the caller. Upvoting twice is an error.
+type UpvotePostPayload struct {
+	ID uuid.UUID `param:"id" validate:"required"`
+}
+
+// Validate checks the post id.
+func (p *UpvotePostPayload) Validate() error { return validate.Struct(p) }
+
+// =============================================================
+// RemoveUpvotePayload  ->  DELETE /posts/:id/upvote
+// =============================================================
+
+// RemoveUpvotePayload takes back the caller's upvote. No upvote to remove is not an error.
+type RemoveUpvotePayload struct {
+	ID uuid.UUID `param:"id" validate:"required"`
+}
+
+// Validate checks the post id.
+func (p *RemoveUpvotePayload) Validate() error { return validate.Struct(p) }
 
 // -------------------------------------------------------------
 // LIST QUERIES (all optional, so pointers: nil = not sent)
@@ -87,7 +113,7 @@ func (q *GetPostsQuery) Validate() error {
 	if err := validate.Struct(q); err != nil {
 		return err
 	}
-	// defaults (the validator has no "default" rule)
+	
 	if q.Page == nil {
 		page := 1
 		q.Page = &page

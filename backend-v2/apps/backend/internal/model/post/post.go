@@ -83,6 +83,29 @@ func (s Severity) Valid() bool {
 	return false
 }
 
+// =============================================================
+// Priority score
+// =============================================================
+
+// Priority score = severity weight*5 + upvotes*PriorityPerUpvote + location priority (Node's formula).
+// The upvote queries add or take away PriorityPerUpvote, so they don't recompute the whole score.
+const PriorityPerUpvote = 2
+
+// =============================================================
+// ResolvedAtChange
+// =============================================================
+
+// ResolvedAtChange is what a status change does to resolved_by_authority_at.
+// The zero value keeps it, so forgetting to set it changes nothing.
+type ResolvedAtChange int
+
+// What a status change can do to resolved_by_authority_at.
+const (
+	ResolvedAtKeep   ResolvedAtChange = iota // leave as is (e.g. reporter confirms: pendingResolution -> resolved)
+	ResolvedAtSetNow                         // set to NOW() (authority marks fixed: -> pendingResolution)
+	ResolvedAtClear                          // set to NULL (reporter rejects: pendingResolution -> inProgress)
+)
+
 // -------------------------------------------------------------
 // TABLE: posts
 // -------------------------------------------------------------
@@ -124,7 +147,7 @@ type Post struct {
 // PopulatedPost is a post with its media (GET /posts/:id).
 type PopulatedPost struct {
 	Post
-	Media []Media `json:"media"`
+	Media []Media `json:"media" db:"media"`
 }
 
 // =============================================================
@@ -133,9 +156,9 @@ type PopulatedPost struct {
 
 // Stats counts posts per status (GET /posts/summary).
 type Stats struct {
-	Total             int `json:"total"`
-	New               int `json:"new"`
-	InProgress        int `json:"inProgress"`
-	PendingResolution int `json:"pendingResolution"`
-	Resolved          int `json:"resolved"`
+	Total             int `json:"total" db:"total"`
+	New               int `json:"new" db:"new"`
+	InProgress        int `json:"inProgress" db:"in_progress"`
+	PendingResolution int `json:"pendingResolution" db:"pending_resolution"`
+	Resolved          int `json:"resolved" db:"resolved"`
 }
